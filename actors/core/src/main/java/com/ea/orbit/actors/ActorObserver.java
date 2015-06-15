@@ -31,7 +31,6 @@ package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
-import com.ea.orbit.concurrent.Task;
 
 /**
  * Used to create interfaces to client objects that can be passed as remote references to actors.
@@ -95,16 +94,8 @@ import com.ea.orbit.concurrent.Task;
  * </pre>
  * </p>
  */
-public interface ActorObserver
+public interface ActorObserver extends Pingable
 {
-    /**
-     * Allows the application to verify if the observer is still alive.
-     * Used by {@code ObserverManager.cleanup()}
-     */
-    default Task<?> ping()
-    {
-        return Task.done();
-    }
 
     /**
      * Gets a reference to a remote observer.
