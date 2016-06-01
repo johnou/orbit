@@ -51,9 +51,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-
                             <artifactSet>
                                 <includes>
+                                    <include>de.ruedigermoeller:fst</include>
                                     <include>com.esotericsoftware:*</include>
                                     <include>de.javakaffee:kryo-serializers</include>
                                     <include>org.objenesis:*</include>
@@ -62,6 +62,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 </includes>
                             </artifactSet>
                             <relocations>
+                                <relocation>
+                                    <pattern>de.ruedigermoeller.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.de.ruedigermoeller.</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>de.javakaffee.</pattern>
                                     <shadedPattern>cloud.orbit.runtime.shaded.de.javakaffee.</shadedPattern>
@@ -118,6 +122,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>de.javakaffee</groupId>
             <artifactId>kryo-serializers</artifactId>
             <version>0.37</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>fst</artifactId>
+            <version>2.47</version>
         </dependency>
 
         <dependency>

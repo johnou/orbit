@@ -30,6 +30,7 @@ package cloud.orbit.actors;
 
 import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.annotation.StatelessWorker;
+import cloud.orbit.actors.cloner.FastSerializationCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -72,7 +73,6 @@ import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
@@ -492,7 +492,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if (objectCloner == null)
         {
-            objectCloner = new KryoCloner();
+            objectCloner = new FastSerializationCloner();
         }
 
         finder = getFirstExtension(ActorClassFinder.class);
@@ -532,7 +532,7 @@ public class Stage implements Startable, ActorRuntime
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
         final MessageLoopback messageLoopback = new MessageLoopback();
-        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoCloner());
+        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new FastSerializationCloner());
         messageLoopback.setRuntime(this);
         pipeline.addLast(messageLoopback.getName(), messageLoopback);
 

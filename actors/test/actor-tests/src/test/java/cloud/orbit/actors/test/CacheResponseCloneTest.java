@@ -30,6 +30,7 @@ package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
+import cloud.orbit.actors.cloner.FastSerializationCloner;
 import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.runtime.NodeCapabilities;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
@@ -66,8 +67,7 @@ public class CacheResponseCloneTest extends ActorBaseTest
     public static Collection<ExecutionObjectCloner> data()
     {
         return Arrays.asList(
-               new KryoCloner(),
-               new JavaSerializationCloner()
+               new KryoCloner(), new JavaSerializationCloner(), new FastSerializationCloner()
         );
     }
 
@@ -106,14 +106,7 @@ public class CacheResponseCloneTest extends ActorBaseTest
         // Verify that the cached dto is unchanged
         assertEquals(someIdValue, a2.getSampleInt());
 
-        if (stage.getObjectCloner() instanceof JavaSerializationCloner)
-        {
-            assertEquals(a1.getId(), a2.getId());
-        }
-        else
-        {
-            assertSame(a1.getId(), a2.getId());
-        }
+        assertEquals(a1.getId(), a2.getId());
 
         assertNotEquals(a1.getSampleIntList().size(), a2.getSampleIntList().size());
         assertTrue(a2.getSampleIntList().contains(30));
