@@ -34,7 +34,7 @@ import java.util.function.Supplier;
 
 public interface ExecutionSerializer
 {
-    <R> Task<R> executeSerialized(Supplier<Task<R>> taskSupplier, int maxQueueSize);
+    <R> Task<R> executeSerialized(Supplier<Task<R>> taskSupplier);
 
     /**
      * Checks if the executor is currently running any tasks.

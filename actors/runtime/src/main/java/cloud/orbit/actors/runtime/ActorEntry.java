@@ -67,7 +67,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
         lastAccess = runtime.clock().millis();
-        return executionSerializer.offerJob(key, () -> doRun(function), 1000);
+        return executionSerializer.offerJob(key, () -> doRun(function));
     }
 
     private <R> Task<R> doRun(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
@@ -175,7 +175,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             {
                 return Task.done();
             }
-            return executionSerializer.offerJob(key, () -> doDeactivate(), 10000);
+            return executionSerializer.offerJob(key, () -> doDeactivate());
         }
         catch (Throwable ex)
         {

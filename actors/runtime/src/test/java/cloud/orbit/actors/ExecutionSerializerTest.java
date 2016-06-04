@@ -45,7 +45,7 @@ public class ExecutionSerializerTest
     public void test()
     {
         WaitFreeExecutionSerializer executionSerializer = new WaitFreeExecutionSerializer(ForkJoinPool.commonPool());
-        Task<String> hello = executionSerializer.executeSerialized(() -> Task.fromValue("hello"), 1000);
+        Task<String> hello = executionSerializer.executeSerialized(() -> Task.fromValue("hello"));
         assertEquals("hello", hello.join());
     }
 
@@ -55,7 +55,7 @@ public class ExecutionSerializerTest
         WaitFreeExecutionSerializer executionSerializer = new WaitFreeExecutionSerializer(ForkJoinPool.commonPool());
         Task<String> hello = executionSerializer.executeSerialized(() -> {
             throw new RuntimeException("Hello Exception");
-        }, 1000);
+        });
         hello.join();
     }
 
@@ -64,7 +64,7 @@ public class ExecutionSerializerTest
     {
         WaitFreeMultiExecutionSerializer<String> executionSerializer = new WaitFreeMultiExecutionSerializer<>(ForkJoinPool.commonPool());
         Supplier<Task<String>> hello1 = () -> Task.fromValue("hello");
-        Task<String> hello = executionSerializer.offerJob("aa", hello1, 1000);
+        Task<String> hello = executionSerializer.offerJob("aa", hello1);
         assertEquals("hello", hello.join());
     }
 
@@ -75,7 +75,7 @@ public class ExecutionSerializerTest
         Supplier<Task<String>> taskSupplier = () -> {
             throw new RuntimeException("Hello Exception");
         };
-        Task<String> hello = executionSerializer.offerJob("aa", taskSupplier, 1000);
+        Task<String> hello = executionSerializer.offerJob("aa", taskSupplier);
         hello.join();
     }
 

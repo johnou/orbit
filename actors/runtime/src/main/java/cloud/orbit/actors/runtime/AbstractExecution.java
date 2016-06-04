@@ -42,7 +42,6 @@ public abstract class AbstractExecution extends HandlerAdapter
 {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     protected MultiExecutionSerializer<Object> executionSerializer;
-    protected int maxQueueSize = 10000;
 
     protected final LongAdder messagesReceived = new LongAdder();
     protected final LongAdder messagesHandled = new LongAdder();

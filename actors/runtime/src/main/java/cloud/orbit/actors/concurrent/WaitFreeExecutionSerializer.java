@@ -31,14 +31,13 @@ package cloud.orbit.actors.concurrent;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.concurrent.Task;
 
+import org.jctools.queues.MpscChunkedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -50,11 +49,12 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
 {
     private static final Logger logger = LoggerFactory.getLogger(WaitFreeExecutionSerializer.class);
     private static final boolean DEBUG_ENABLED = logger.isDebugEnabled();
+    private static final int INITIAL_QUEUE_CAPACITY = 512;
+    private static final int MAX_QUEUE_CAPACITY = 512 * 512;
 
     private final ExecutorService executorService;
-    private final ConcurrentLinkedQueue<Supplier<Task<?>>> queue = new ConcurrentLinkedQueue<>();
+    private final MpscChunkedArrayQueue<Supplier<Task<?>>> queue = new MpscChunkedArrayQueue<>(INITIAL_QUEUE_CAPACITY, MAX_QUEUE_CAPACITY, true);
     private final AtomicBoolean lock = new AtomicBoolean();
-    private final AtomicInteger size = new AtomicInteger();
     private final Object key;
 
     public WaitFreeExecutionSerializer(final ExecutorService executorService)
@@ -69,27 +69,27 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     }
 
     @Override
-    public <R> Task<R> executeSerialized(Supplier<Task<R>> taskSupplier, int maxQueueSize)
+    public <R> Task<R> executeSerialized(Supplier<Task<R>> taskSupplier)
     {
         final Task<R> completion = new Task<>();
 
-        int queueSize = size.get();
-        if (DEBUG_ENABLED && queueSize >= maxQueueSize / 10)
+        if (DEBUG_ENABLED)
         {
-            logger.debug("Queued " + queueSize + " / " + maxQueueSize + " for " + key);
+            int queueSize = queue.size();
+            int threshold = MAX_QUEUE_CAPACITY / 10;
+            if (queueSize >= threshold && queueSize % threshold == 0) {
+                logger.debug("Queued " + queueSize + " / " + MAX_QUEUE_CAPACITY + " for " + key);
+            }
         }
 
-        if (queueSize >= maxQueueSize || !queue.add(() -> {
+        if (!queue.offer(() -> {
                     Task<R> source = InternalUtils.safeInvoke(taskSupplier);
                     InternalUtils.linkFutures(source, completion);
                     return source;
                 }))
         {
-            throw new IllegalStateException(String.format("Queue full for %s (%d > %d)", key, queue.size(), maxQueueSize));
+            throw new IllegalStateException(String.format("Queue full for %s (%d > %d)", key, queue.size(), MAX_QUEUE_CAPACITY));
         }
-
-        // managing the size like this to avoid using ConcurrentLinkedQueue.size()
-        size.incrementAndGet();
 
         tryExecute(false);
 
@@ -119,7 +119,6 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
             final Supplier<Task<?>> toRun = queue.poll();
             if (toRun != null)
             {
-                size.decrementAndGet();
                 try
                 {
                     Task<?> taskFuture;
@@ -235,6 +234,6 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         executeSerialized(() -> {
             command.run();
             return Task.done();
-        }, Integer.MAX_VALUE);
+        });
     }
 }

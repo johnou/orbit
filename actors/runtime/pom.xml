@@ -59,6 +59,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <include>org.objenesis:*</include>
                                     <include>org.ow2.asm:asm</include>
                                     <include>com.github.ben-manes.caffeine:caffeine</include>
+                                    <include>org.jctools:jctools-core</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -81,6 +82,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 <relocation>
                                     <pattern>com.github.benmanes.caffeine.</pattern>
                                     <shadedPattern>cloud.orbit.runtime.shaded.com.github.benmanes.caffeine.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jctools.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.org.jctools.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -118,6 +123,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>de.javakaffee</groupId>
             <artifactId>kryo-serializers</artifactId>
             <version>0.37</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+            <version>1.2</version>
         </dependency>
 
         <dependency>

@@ -99,7 +99,7 @@ public class Execution extends AbstractExecution implements Startable
             {
                 // on activate will handle the completion;
                 InternalUtils.safeInvoke(() -> executionSerializer.offerJob(toReference,
-                        () -> onActivate(ctx, invocation), maxQueueSize));
+                        () -> onActivate(ctx, invocation)));
             }
             else
             {

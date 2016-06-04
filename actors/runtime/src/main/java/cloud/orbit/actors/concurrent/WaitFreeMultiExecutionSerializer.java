@@ -35,12 +35,10 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 import cloud.orbit.actors.runtime.InternalUtils;
-import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -59,11 +57,6 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
     // and from anyone holding the promises (Tasks) it returns.
     private final Cache<T, WaitFreeExecutionSerializer> serializers = Caffeine.newBuilder().weakValues().build();
 
-    public WaitFreeMultiExecutionSerializer()
-    {
-        this(ExecutorUtils.newScalingThreadPool(ForkJoinPool.getCommonPoolParallelism()));
-    }
-
     public WaitFreeMultiExecutionSerializer(final ExecutorService executor)
     {
         this.executorService = executor;
@@ -71,12 +64,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
 
     public WaitFreeExecutionSerializer getSerializer(T key)
     {
-        final WaitFreeExecutionSerializer serializer = serializers.getIfPresent(key);
-        if (serializer == null)
-        {
-            return serializers.get(key, o -> new WaitFreeExecutionSerializer(executorService, key));
-        }
-        return serializer;
+        return serializers.get(key, o -> new WaitFreeExecutionSerializer(executorService, key));
     }
 
     /**
@@ -85,14 +73,14 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
      * @return true if the task was accepted.
      */
     @Override
-    public <R> Task<R> offerJob(T key, Supplier<Task<R>> job, int maxQueueSize)
+    public <R> Task<R> offerJob(T key, Supplier<Task<R>> job)
     {
         // todo remove this.
         if (key == null)
         {
             executorService.execute(() -> InternalUtils.safeInvoke(job));
         }
-        return getSerializer(key).executeSerialized(() -> InternalUtils.safeInvoke(job), maxQueueSize);
+        return getSerializer(key).executeSerialized(() -> InternalUtils.safeInvoke(job));
     }
 
     @Override
