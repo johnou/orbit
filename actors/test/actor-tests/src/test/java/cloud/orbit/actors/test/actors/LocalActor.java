@@ -31,78 +31,14 @@ package cloud.orbit.actors.test.actors;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.concurrent.Task;
 
-import java.util.UUID;
-
-@SuppressWarnings("rawtypes")
-public class SomeActorImpl extends AbstractActor implements SomeActor
+/**
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public class LocalActor extends AbstractActor implements Local
 {
-    private UUID uniqueActivationId = UUID.randomUUID();
-    private boolean activationWasCalled;
-
     @Override
-    public Task<String> sayHello(final String greeting)
+    public Task<Void> test()
     {
-        return Task.fromValue("bla");
-    }
-
-    @Override
-    public Task<String> sayHelloOnlyIfActivated()
-    {
-        return Task.fromValue("hello");
-    }
-
-    @Override
-    public Task<UUID> getUniqueActivationId()
-    {
-        return Task.fromValue(uniqueActivationId);
-    }
-
-    @Override
-    public Task<UUID> getUniqueActivationId(final long sleepNanos)
-    {
-        long start = System.nanoTime();
-        if (sleepNanos >= 1000)
-        {
-            try
-            {
-                Thread.sleep(sleepNanos / 1000);
-            }
-            catch (InterruptedException e)
-            {
-                getLogger().error("Error sleeping", e);
-            }
-        }
-        while (start + sleepNanos >= System.nanoTime())
-        {
-            // do nothing, waiting.
-        }
-        return Task.fromValue(uniqueActivationId);
-    }
-
-
-    @Override
-    public Task<Boolean> getActivationWasCalled()
-    {
-        return Task.fromValue(activationWasCalled);
-    }
-
-    public Task<?> activateAsync()
-    {
-        getLogger().debug("activateAsync");
-        activationWasCalled = true;
-        return super.activateAsync();
-    }
-
-    @Override
-    public Task<?> deactivateAsync()
-    {
-        getLogger().debug("deactivateAsync");
-        return super.deactivateAsync();
-    }
-
-    @Override
-    public Task<String> getNodeId()
-    {
-        return Task.fromValue(runtimeIdentity());
+        return Task.done();
     }
 }

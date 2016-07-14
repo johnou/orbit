@@ -26,41 +26,20 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.test.actors;
 
-import cloud.orbit.actors.ActorObserver;
-import cloud.orbit.actors.annotation.OneWay;
-import cloud.orbit.actors.cluster.NodeAddress;
+import cloud.orbit.actors.Actor;
+import cloud.orbit.actors.annotation.NoIdentity;
+import cloud.orbit.actors.annotation.PreferLocalPlacement;
 import cloud.orbit.concurrent.Task;
 
-public interface NodeCapabilities extends ActorObserver
+/**
+ * @author Johno Crawford (johno@sulake.com)
+ */
+@PreferLocalPlacement
+@NoIdentity
+public interface Local extends Actor
 {
-    enum NodeTypeEnum
-    {
-        SERVER, CLIENT
-    }
 
-    enum NodeState
-    {
-        RUNNING, STOPPING, STOPPED
-    }
-
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
-
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
-
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
-
-    @OneWay
-    Task<Void> moved(RemoteReference<?> actorKey, NodeAddress oldAddress, NodeAddress newAddress);
-
-    @OneWay
-    Task<Void> remove(RemoteReference<?> actorKey);
+    Task<Void> test();
 }

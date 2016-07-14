@@ -31,8 +31,16 @@ package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
+import cloud.orbit.actors.extensions.PipelineExtension;
+import cloud.orbit.actors.net.HandlerContext;
+import cloud.orbit.actors.runtime.AbstractActor;
+import cloud.orbit.actors.runtime.DefaultHandlers;
+import cloud.orbit.actors.runtime.Invocation;
+import cloud.orbit.actors.runtime.RemoteReference;
+import cloud.orbit.actors.test.actors.Local;
 import cloud.orbit.actors.test.actors.SomeActor;
 import cloud.orbit.actors.test.actors.StatelessThing;
+import cloud.orbit.concurrent.Task;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -111,6 +119,80 @@ public class DeactivationTest extends ClientTest
         client.bind();
         set.add(actor1.getUniqueActivationId().join());
         assertEquals(2, set.size());
+    }
+
+    @Test
+    public void dirtyLocalCache() throws ExecutionException, InterruptedException, TimeoutException
+    {
+        clock.stop();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
+        SomeActor actor1 = Actor.getReference(SomeActor.class, "1");
+
+        stage1.bind();
+        actor1.sayHello("huuhaa").join();
+        stage2.bind();
+        assertNotNull(actor1.sayHelloOnlyIfActivated().join());
+        clock.incrementTimeMillis(TimeUnit.HOURS.toMillis(1));
+        stage1.cleanup().join();
+        eventuallyTrue(2000, () -> stage1.locateActor(RemoteReference.from(actor1), false).get() == null);
+        assertNull(actor1.sayHelloOnlyIfActivated().join());
+        dumpMessages();
+    }
+
+    @Test
+    public void notifyOnActorMove() throws ExecutionException, InterruptedException, TimeoutException
+    {
+        clock.stop();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
+        Stage stage3 = createStage();
+        Local actor1 = Actor.getReference(Local.class);
+
+        stage1.bind();
+        actor1.test().join();
+        stage2.bind();
+        actor1.test().join();
+        stage3.bind();
+        actor1.test().join();
+
+        clock.incrementTimeMillis(TimeUnit.HOURS.toMillis(1));
+        stage1.cleanup().join();
+        stage3.cleanup().join();
+        actor1.test().join();
+
+        dumpMessages();
+    }
+
+    @Override
+    protected void installExtensions(final Stage stage)
+    {
+        super.installExtensions(stage);
+        stage.addExtension(new PipelineExtension()
+        {
+            @Override
+            public void onRead(HandlerContext ctx, Object msg) throws Exception {
+                if (msg instanceof Invocation) {
+                    Invocation invocation = (Invocation) msg;
+                    if (invocation.getCompletion() != null) {
+                        System.out.println(invocation.getHops());
+                    }
+                }
+                ctx.fireRead(msg);
+            }
+
+
+            @Override
+            public String getName() {
+                return "execution-hook";
+            }
+
+            @Override
+            public String getAfterHandlerName() {
+                return DefaultHandlers.EXECUTION;
+            }
+
+        });
     }
 
     @SuppressWarnings("unused")
