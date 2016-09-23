@@ -39,8 +39,8 @@ import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.runtime.NodeCapabilities;
 import cloud.orbit.actors.runtime.ReminderController;
 import cloud.orbit.actors.runtime.RemoteReference;
+import cloud.orbit.actors.runtime.ThreadRequestContext;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.concurrent.TaskContext;
 
 import java.lang.reflect.Method;
 import java.text.NumberFormat;
@@ -239,10 +239,9 @@ public class TestInvocationLog implements PipelineExtension, PeerExtension
             }
             else
             {
-                final TaskContext current = TaskContext.current();
-                if (current != null && current.getProperty(ActorBaseTest.TEST_NAME_PROP) != null)
+                if (ThreadRequestContext.get(ActorBaseTest.TEST_NAME_PROP) != null)
                 {
-                    from = String.valueOf(current.getProperty(ActorBaseTest.TEST_NAME_PROP));
+                    from = String.valueOf(ThreadRequestContext.get(ActorBaseTest.TEST_NAME_PROP));
                 }
                 else
                 {

@@ -171,14 +171,11 @@ public class Execution extends AbstractExecution implements Startable
             final ActorTaskContext context = ActorTaskContext.current();
             if (context != null)
             {
-                if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
+                if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0)
                 {
                     for (Map.Entry e : invocation.getHeaders().entrySet())
                     {
-                        if (runtime.getStickyHeaders().contains(e.getKey()))
-                        {
-                            context.setProperty(String.valueOf(e.getKey()), e.getValue());
-                        }
+                        ThreadRequestContext.put(String.valueOf(e.getKey()), e.getValue());
                     }
                 }
                 Method method = invoker.getMethod(invocation.getMethodId());
@@ -222,6 +219,10 @@ public class Execution extends AbstractExecution implements Startable
                 invocation.getCompletion().completeExceptionally(exception);
             }
             return Task.fromException(exception);
+        }
+        finally
+        {
+            ThreadRequestContext.clear();
         }
     }
 

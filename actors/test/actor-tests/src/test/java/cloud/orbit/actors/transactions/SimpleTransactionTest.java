@@ -37,7 +37,6 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
-import static cloud.orbit.actors.transactions.TransactionUtils.currentTransactionId;
 import static org.junit.Assert.assertEquals;
 
 /**

@@ -51,9 +51,9 @@ import cloud.orbit.actors.extensions.json.JsonMessageSerializer;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.AbstractExecution;
 import cloud.orbit.actors.runtime.ActorFactoryGenerator;
-import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.Execution;
 import cloud.orbit.actors.runtime.NodeCapabilities;
+import cloud.orbit.actors.runtime.ThreadRequestContext;
 import cloud.orbit.actors.server.ServerPeer;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.ForwardingExecutorService;
@@ -128,14 +128,11 @@ public class ActorBaseTest
     @Rule
     public TestRule dumpLogs = new TestWatcher()
     {
-        final ActorTaskContext taskContext = new ActorTaskContext();
 
         protected void starting(Description description)
         {
             logger = loggerExtension.getLogger(description.getMethodName());
-            taskContext.push();
-            taskContext.setProperty(TEST_NAME_PROP, description.getMethodName());
-            taskContext.setProperty(ActorBaseTest.class.getName(), description);
+            ThreadRequestContext.put(TEST_NAME_PROP, description.getMethodName());
             testDescription = description;
         }
 
@@ -144,14 +141,7 @@ public class ActorBaseTest
          */
         protected void finished(Description description)
         {
-            try
-            {
-                taskContext.pop();
-            }
-            catch (Exception ex)
-            {
-                // ignore
-            }
+            ThreadRequestContext.remove(TEST_NAME_PROP);
         }
 
 

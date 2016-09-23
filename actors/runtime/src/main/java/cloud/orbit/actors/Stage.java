@@ -28,8 +28,16 @@
 
 package cloud.orbit.actors;
 
+import com.ea.async.Async;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.annotation.StatelessWorker;
+import cloud.orbit.actors.annotation.StorageExtension;
+import cloud.orbit.actors.cloner.ExecutionObjectCloner;
+import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -53,11 +61,11 @@ import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
-import cloud.orbit.actors.runtime.FastActorClassFinder;
-import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
+import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.Execution;
+import cloud.orbit.actors.runtime.FastActorClassFinder;
 import cloud.orbit.actors.runtime.Hosting;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
@@ -74,28 +82,19 @@ import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
-import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
+import cloud.orbit.actors.runtime.ThreadRequestContext;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
 import cloud.orbit.actors.streams.simple.SimpleStreamExtension;
 import cloud.orbit.actors.transactions.IdUtils;
-import cloud.orbit.actors.transactions.TransactionUtils;
 import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.exception.UncheckedException;
+import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.util.StringUtils;
-
-import com.ea.async.Async;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cloud.orbit.actors.annotation.StorageExtension;
 
 import javax.inject.Singleton;
 
@@ -104,16 +103,11 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
@@ -158,9 +152,6 @@ public class Stage implements Startable, ActorRuntime
 
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
-
-    @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
@@ -230,7 +221,6 @@ public class Stage implements Startable, ActorRuntime
         private Messaging messaging;
 
         private List<ActorExtension> extensions = new ArrayList<>();
-        private Set<String> stickyHeaders = new HashSet<>();
 
         private Timer timer;
 
@@ -300,12 +290,6 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
-        public Builder stickyHeaders(String... stickyHeaders)
-        {
-            Collections.addAll(this.stickyHeaders, stickyHeaders);
-            return this;
-        }
-
         public Builder timer(Timer timer)
         {
             this.timer = timer;
@@ -328,7 +312,6 @@ public class Stage implements Startable, ActorRuntime
             stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
             stage.setMessaging(messaging);
-            stage.addStickyHeaders(stickyHeaders);
             return stage;
         }
 
@@ -337,11 +320,6 @@ public class Stage implements Startable, ActorRuntime
     public Stage()
     {
         ActorRuntime.setRuntime(cachedRef);
-    }
-
-    public void addStickyHeaders(Collection<String> stickyHeaders)
-    {
-        this.stickyHeaders.addAll(stickyHeaders);
     }
 
     public void setClock(final Clock clock)
@@ -946,26 +924,7 @@ public class Stage implements Startable, ActorRuntime
             throw new IllegalStateException("Stage is stopped. " + this.toString());
         }
         final Invocation invocation = new Invocation(toReference, m, oneWay, methodId, params, null);
-        // copy stick context valued to the message headers headers
-        final ActorTaskContext context = ActorTaskContext.current();
-        if (context != null)
-        {
-            Map<Object, Object> headers = null;
-            for (String key : stickyHeaders)
-            {
-                final Object value = context.getProperty(key);
-                if (value != null)
-                {
-                    if (headers == null)
-                    {
-                        headers = new HashMap<>();
-                    }
-                    headers.put(key, value);
-                }
-            }
-            invocation.setHeaders(headers);
-        }
-
+        invocation.setHeaders(ThreadRequestContext.getCopyOrNull());
         final Task<Void> result = pipeline.write(invocation);
         return result;
     }
@@ -1279,11 +1238,6 @@ public class Stage implements Startable, ActorRuntime
     public Logger getLogger(Object object)
     {
         return loggerExtension.getLogger(object);
-    }
-
-    public Set<String> getStickyHeaders()
-    {
-        return stickyHeaders;
     }
 
     @Override

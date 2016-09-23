@@ -31,8 +31,8 @@ package cloud.orbit.actors.transactions;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.ActorTaskContext;
+import cloud.orbit.actors.runtime.ThreadRequestContext;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.concurrent.TaskContext;
 
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
@@ -43,28 +43,10 @@ public class TransactionUtils
 {
     public static final String ORBIT_TRANSACTION_ID = "orbit.transactionId";
 
-
-    static String currentTransactionId(final TaskContext context)
+    static String currentTransactionId()
     {
-        String tid = (String) context.getProperty(ORBIT_TRANSACTION_ID);
-        if (tid != null)
-        {
-            return tid;
-        }
-        return null;
+        return (String) ThreadRequestContext.get(ORBIT_TRANSACTION_ID);
     }
-
-
-    public static String currentTransactionId()
-    {
-        final TaskContext context = TaskContext.current();
-        if (context == null)
-        {
-            return null;
-        }
-        return currentTransactionId(context);
-    }
-
 
     /**
      * Asynchronous transaction
@@ -80,16 +62,14 @@ public class TransactionUtils
         final ActorTaskContext oldContext = ActorTaskContext.current();
         final ActorTaskContext context = oldContext != null ? oldContext.cloneContext() : new ActorTaskContext();
 
-
         // http://security.stackexchange.com/questions/1952/how-long-should-a-random-nonce-be
         final String transactionId = IdUtils.urlSafeString(96);
 
-        context.setProperty(ORBIT_TRANSACTION_ID, transactionId);
         final Transaction transaction = Actor.getReference(Transaction.class, transactionId);
         // asynchronously initiating the transaction
         transaction.initTransaction(parentTransactionId, null);
 
-        // mus not use await in this method after the push, since push and pop must be in the same thread.
+        // must not use await in this method after the push, since push and pop must be in the same thread.
         context.push();
         if (oldContext == null)
         {
@@ -101,6 +81,7 @@ public class TransactionUtils
         }
         try
         {
+            ThreadRequestContext.put(ORBIT_TRANSACTION_ID, transactionId);
             return safeCall(() -> {
                 Task<R> result = safeCall(body);
                 try
@@ -121,6 +102,7 @@ public class TransactionUtils
         }
         finally
         {
+            ThreadRequestContext.remove(ORBIT_TRANSACTION_ID);
             context.pop();
         }
     }

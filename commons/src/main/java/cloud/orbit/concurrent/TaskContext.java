@@ -31,10 +31,8 @@ package cloud.orbit.concurrent;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -51,8 +49,6 @@ public class TaskContext
 
     // human friendly id, for debugging
     private long id = nextId.getAndIncrement();
-
-    private ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<>();
 
     private Executor defaultExecutor = null;
 
@@ -315,57 +311,6 @@ public class TaskContext
             };
         }
         return w;
-    }
-
-    /**
-     * Returns the property with the given name registered in the current execution context,
-     * {@code null} if there is no property by that name.
-     * <p>
-     * A property allows orbit extensions to exchange custom information.
-     * </p>
-     *
-     * @param name the name of the property
-     * @return an {@code Object} or
-     * {@code null} if no property exists matching the given name.
-     */
-    public Object getProperty(String name)
-    {
-        if (properties == null)
-        {
-            return null;
-        }
-        return properties.get(name);
-    }
-
-    /**
-     * Binds an object to a given property name in the current execution context.
-     * If the name specified is already used for a property,
-     * this method will replace the value of the property with the new value.
-     * <p>
-     * A property allows orbit extensions to exchange custom information.
-     * </p>
-     * <p>
-     * A null value will work to remove the property.
-     * </p>
-     *
-     * @param name  a {@code String} the name of the property.
-     * @param value an {@code Object} may be null
-     */
-    public void setProperty(String name, Object value)
-    {
-        if (value != null)
-        {
-            properties.put(name, value);
-        }
-        else
-        {
-            properties.remove(name);
-        }
-    }
-
-    protected Map<String, Object> properties()
-    {
-        return properties;
     }
 
 }
