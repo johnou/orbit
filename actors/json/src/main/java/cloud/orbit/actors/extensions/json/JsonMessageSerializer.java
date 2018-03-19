@@ -348,9 +348,8 @@ class ClassIdResolver extends ClassNameIdResolver
         return DefaultClassDictionary.get().getClassId(type);
     }
 
-
     @Override
-    protected JavaType _typeFromId(String id, DatabindContext ctxt)
+    protected JavaType _typeFromId(String id, DatabindContext ctxt) throws IOException
     {
         Class<?> cls = DefaultClassDictionary.get().getClassById(Integer.parseInt(id), true);
         return ctxt.getTypeFactory().constructSpecializedType(_baseType, cls);

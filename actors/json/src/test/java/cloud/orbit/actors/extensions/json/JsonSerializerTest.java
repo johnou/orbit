@@ -75,18 +75,19 @@ public class JsonSerializerTest
 
         {
             String str = "{\"payload\":[{\"@type\":\"-47419438\",\"payload\":5}]}";
-            String str2 = "{\"payload\":[{\"@type\":-47419438,\"payload\":5}]}";
+            //String str2 = "{\"payload\":[{\"@type\":-47419438,\"payload\":5}]}";
+            String str2 = "{\"payload\":[\"null\",[{\"@type\":\"-47419438\",\"payload\":5}]]}";
             SomeObject obj = mapper.readValue(str, SomeObject.class);
             assertEquals(str2, mapper.writeValueAsString(obj));
         }
 
         {
-            String str = "[{\"@type\":-47419438,\"payload\":5}]";
+            String str = "[{\"@type\":\"-47419438\",\"payload\":5}]";
             assertEquals(str, mapper.writeValueAsString(new Object[]{ new SomeObject(5) }));
         }
 
         {
-            String str = "[{\"@type\":-47419438,\"payload\":5}]";
+            String str = "[{\"@type\":\"-47419438\",\"payload\":5}]";
             Object obj = mapper.readValue(str, Object.class);
             assertEquals(str, mapper.writeValueAsString(obj));
         }
@@ -94,14 +95,16 @@ public class JsonSerializerTest
 
         {
             String str = "{\"payload\":[\"test\",{\"@type\":\"-47419438\",\"payload\":5}]}";
-            String str2 = "{\"payload\":[\"test\",{\"@type\":-47419438,\"payload\":5}]}";
+            //String str2 = "{\"payload\":[\"test\",{\"@type\":-47419438,\"payload\":5}]}";
+            String str2 = "{\"payload\":[\"null\",[\"test\",{\"@type\":\"-47419438\",\"payload\":5}]]}";
             SomeObject obj = mapper.readValue(str, SomeObject.class);
             assertEquals(str2, mapper.writeValueAsString(obj));
         }
 
         {
             String str = "{\"payload\":[\"test\",{\"@type\":\"-47419438\",\"payload\":5}],\"headers\":{}}";
-            String str2 = "{\"payload\":[\"test\",{\"@type\":-47419438,\"payload\":5}],\"headers\":{}}";
+            //String str2 = "{\"payload\":[\"test\",{\"@type\":-47419438,\"payload\":5}],\"headers\":{}}";
+            String str2 = "{\"payload\":[\"null\",[\"test\",{\"@type\":\"-47419438\",\"payload\":5}]],\"headers\":{}}";
             SomeObject obj = mapper.readValue(str, SomeObject.class);
             SomeObject obj2 = mapper.readValue(str, SomeObject.class);
             assertEquals(str2, mapper.writeValueAsString(obj));
@@ -109,11 +112,12 @@ public class JsonSerializerTest
         }
         {
             String str = "{\"payload\":[\"test\",{\"@type\":-47419438,\"payload\":5}],\"headers\":{}}";
+            String str2 = "{\"payload\":[\"null\",[\"test\",{\"@type\":\"-47419438\",\"payload\":5}]],\"headers\":{}}";
             SomeObject obj = mapper.readValue(str, SomeObject.class);
-            assertEquals(str, mapper.writeValueAsString(obj));
+            assertEquals(str2, mapper.writeValueAsString(obj));
         }
 
-            assertEquals("{\"payload\":{\"@type\":-47419438,\"payload\":5}}",
+            assertEquals("{\"payload\":{\"@type\":\"-47419438\",\"payload\":5}}",
                 mapper.writeValueAsString(new SomeObject(new SomeObject(5))));
 
         mapper.readValue("{\"payload\":[\"tes\"]}", SomeObject.class);
@@ -130,17 +134,17 @@ public class JsonSerializerTest
 
 
 
-        assertEquals("[[]]",
+        assertEquals("[[\"null\",[]]]",
                 mapper.writeValueAsString(new Object[]{ new Object[]{} }));
-        assertEquals("[[[]]]",
+        assertEquals("[[\"null\",[[\"null\",[]]]]]",
                 mapper.writeValueAsString(new Object[]{ new Object[]{new ArrayList<Object>()} }));
-        assertEquals("[[{}]]",
+        assertEquals("[[\"null\",[{\"@type\":\"null\"}]]]",
                 mapper.writeValueAsString(new Object[]{ new Object[]{new HashMap()} }));
 
 
-        assertEquals("[{\"@type\":-47419438,\"payload\":5}]",
+        assertEquals("[{\"@type\":\"-47419438\",\"payload\":5}]",
                 mapper.writeValueAsString(new Object[]{ new SomeObject(5) }));
-        assertEquals("[[{\"@type\":-47419438,\"payload\":5}]]",
+        assertEquals("[[\"null\",[{\"@type\":\"-47419438\",\"payload\":5}]]]",
                 mapper.writeValueAsString(new Object[]{ new Object[]{ new SomeObject(5) } }));
 
 
