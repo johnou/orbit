@@ -1578,6 +1578,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         return concreteClass != null;
     }
 
+    public Set<String> findSupportedActorInterfaces()
+    {
+        return finder.getAllActorInterfaces();
+    }
+
     public Pipeline getPipeline()
     {
         return pipeline;

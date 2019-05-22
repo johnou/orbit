@@ -33,6 +33,8 @@ import cloud.orbit.actors.annotation.OneWay;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.concurrent.Task;
 
+import java.util.Map;
+
 public interface NodeCapabilities extends ActorObserver
 {
     enum NodeTypeEnum
@@ -57,6 +59,8 @@ public interface NodeCapabilities extends ActorObserver
      * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
      */
     Task<Integer> canActivate(String interfaceName);
+
+    Task<Map<String, Integer>> findSupportedActivations();
 
     Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
 

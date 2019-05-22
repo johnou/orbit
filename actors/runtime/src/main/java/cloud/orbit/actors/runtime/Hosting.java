@@ -186,6 +186,21 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     }
 
     @Override
+    public Task<Map<String, Integer>> findSupportedActivations()
+    {
+        if (nodeType == NodeTypeEnum.CLIENT || stage.getState() == NodeState.STOPPED)
+        {
+            return Task.fromValue(Collections.emptyMap());
+        }
+        final Map<String, Integer> supportedActivations = new HashMap<>();
+        for (String actorInterface : stage.findSupportedActorInterfaces())
+        {
+            supportedActivations.put(actorInterface, actorSupported_yes);
+        }
+        return Task.fromValue(supportedActivations);
+    }
+
+    @Override
     public Task<Void> nodeModeChanged(final NodeAddress nodeAddress, final NodeState newState)
     {
         if (logger.isDebugEnabled())
@@ -256,9 +271,17 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             NodeInfo nodeInfo = oldNodes.remove(a);
             if (nodeInfo == null)
             {
-                nodeInfo = new NodeInfo(a);
-                nodeInfo.nodeCapabilities = stage.getRemoteObserverReference(a, NodeCapabilities.class, "");
-                nodeInfo.active = true;
+                final NodeInfo newNodeInfo = new NodeInfo(a);
+                newNodeInfo.nodeCapabilities = stage.getRemoteObserverReference(a, NodeCapabilities.class, "");
+                newNodeInfo.nodeCapabilities.findSupportedActivations().whenComplete((supportedActivations, throwable) -> {
+                    if (supportedActivations != null && !supportedActivations.isEmpty())
+                    {
+                        newNodeInfo.canActivate.putAll(supportedActivations);
+                        newNodeInfo.initializedSupportedActivations = true;
+                    }
+                });
+                newNodeInfo.active = true;
+                nodeInfo = newNodeInfo;
             }
             newNodes.put(a, nodeInfo);
 
@@ -497,6 +520,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
                             return null;
                         });
+                    }
+
+                    if (potentialNode.initializedSupportedActivations)
+                    {
+                        if (potentialNode.canActivate.putIfAbsent(interfaceClassName, actorSupported_no) == null)
+                        {
+                            continue;
+                        };
                     }
 
                     // loop over the potential nodes, add the interface to a concurrent hashset, if add returns true there is no activation pending

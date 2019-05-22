@@ -16,6 +16,7 @@ public class NodeInfo
     NodeState state = NodeState.RUNNING;
     NodeCapabilities nodeCapabilities;
     boolean cannotHostActors;
+    boolean initializedSupportedActivations;
     final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
     final Set<String> canActivatePending = ConcurrentHashMap.newKeySet();
 
